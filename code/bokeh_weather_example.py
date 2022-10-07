@@ -133,12 +133,12 @@ def make_map(stations):
 
 
 path = '../data/MIDAS-open/uk-daily-rain-obs/'
-locations = [x[0][41:] for x in os.walk(path)]
+locations = [x[0][36:] for x in os.walk(path)]
 city_select = Select(value=locations[1], title='City', options=sorted(locations))
 
 
 files = glob.glob(path+city_select.value+'/*.csv')
-print(files[0])
+
 years = [x[-8:-4] for x in files]
 year_select = Select(value=years[0], title='Year', options=sorted(years))
 
