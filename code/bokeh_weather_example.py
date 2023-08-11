@@ -36,7 +36,9 @@ from bokeh.models import LinearAxis, Range1d
 
 # get station information
 stations = pd.read_csv('../data/MIDAS-open/excel_list_station_details.csv',skiprows=1)
-
+stations = pd.read_csv('/home/mbexkes3/DS_hub/midasmap/markers/markers_daily-temperature_201901.txt',sep='\t')
+#stations['Name'] = [x.split()[0] for x in stations['description']]
+stations = pd.read_csv('/home/mbexkes3/DS_hub/data/midas-open_uk-daily-temperature-obs_dv-202207_station-metadata.csv',skiprows=46)
 
 
 def get_dataset(df):
@@ -44,29 +46,26 @@ def get_dataset(df):
 
 def make_plot(source,source2, title):
     TOOLTIPS = [
-        ("value", "@prcp_amt"),
+        ("value", "@max_air_temp"),
         ]
        # ("Category 2", "@cat2")
     plot = figure(x_axis_type="datetime", tools='hover', tooltips=TOOLTIPS)#x_axis_type="datetime", width=800, tools="", toolbar_location=None)
     plot.title.text = title
 
-    plot.line(x='ob_date',y='prcp_amt',line_color='red',legend='Year A',source=source)
-    plot.line(x='ob_date',y='prcp_amt',source=source2)
+    plot.line(x='ob_date',y='min_air_temp',line_color='red',legend='Max',source=source)
+    plot.line(x='ob_date',y='max_air_temp',line_color='blue',legend='Min',source=source)
     #plot.line(x=[1,2,3],y=[1,10,20])
-    plot.extra_x_ranges['sec_x_axis'] = Range1d(0, 100)
-    ax2 = LinearAxis(x_range_name="sec_x_axis", axis_label="secondary x-axis")
-    plot.add_layout(ax2, 'below')
+   # plot.extra_x_ranges['sec_x_axis'] = Range1d(0, 100)
+   # ax2 = LinearAxis(x_range_name="sec_x_axis", axis_label="secondary x-axis")
+   # plot.add_layout(ax2, 'below')
 
-    
-
-    
     # fixed attributes
     plot.xaxis.axis_label = None
-    plot.yaxis.axis_label = "Precip"
+    plot.yaxis.axis_label = "Temperature"
     plot.axis.axis_label_text_font_style = "bold"
     plot.x_range = DataRange1d(range_padding=0.0)
     plot.grid.grid_line_alpha = 0.3
-    plot.legend.title = 'Years'
+    plot.legend.title = ''
 
     return plot
 
@@ -77,29 +76,29 @@ def update_plot(attrname, old, new):
     plot.title.text = "Weather data for " + city
     
     filename = glob.glob(path+'/'+city_select.value+'/*'+year_select.value+'*.csv')
-    filename2 = glob.glob(path+'/'+city_select.value+'/*'+year_select_2.value+'*.csv')
+  #  filename2 = glob.glob(path+'/'+city_select.value+'/*'+year_select_2.value+'*.csv')
 
     if len(filename):
-        df = pd.read_csv(filename[0], skiprows=61)
-        df['ob_date'] = pd.to_datetime(df['ob_date'][:-1], format='%Y-%m-%d %H:%M:%S')
+        df = pd.read_csv(filename[0], skiprows=90)
+        df['ob_date'] = pd.to_datetime(df['ob_end_time'][:-1], format='%Y-%m-%d %H:%M:%S')
         src = get_dataset(df)
         source.data.update(src.data)
     else:
         pass
 
-    if len(filename2):
-        df = pd.read_csv(filename2[0], skiprows=61)
-        df['ob_date'] = pd.to_datetime(df['ob_date'][:-1], format='%Y-%m-%d %H:%M:%S')
-        src = get_dataset(df)
-        source2.data.update(src.data)
-    else:
-        pass
+ #   if len(filename2):
+  #      df = pd.read_csv(filename2[0], skiprows=90)
+   #     df['ob_date'] = pd.to_datetime(df['ob_end_time'][:-1], format='%Y-%m-%d %H:%M:%S')
+   #     src = get_dataset(df)
+   #     source2.data.update(src.data)
+   # else:
+   #     pass
 
 def make_map(stations):
-    lon = stations['Longitude'].apply(lambda x: float(x))
-    lat = stations['Latitude'].apply(lambda x: float(x))
+    lon = stations['station_longitude'].apply(lambda x: float(x))
+    lat = stations['station_latitude'].apply(lambda x: float(x))
 
-    d = {'lat': lat, 'lon': lon, 'name':stations['Name']}
+    d = {'lat': lat, 'lon': lon, 'name':stations['station_file_name']}
     df_map = pd.DataFrame(data=d)
 
     TOOLS="hover,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,poly_select"
@@ -122,7 +121,7 @@ def make_map(stations):
        # ("Category 2", "@cat2")]
 
     cplot = figure(title = 'Weather Stations',tools = TOOLS, tooltips=TOOLTIPS, plot_width=400, plot_height=400)
-    cplot.circle("lon", "lat", size=8,source=SRC_map)
+    cplot.circle("lon", "lat", size=2,source=SRC_map)
     states = cplot.patches('xs','ys', source = geosource,
                        fill_color = 'gray',
                        line_color = 'gray', 
@@ -133,7 +132,9 @@ def make_map(stations):
 
 
 path = '../data/MIDAS-open/uk-daily-rain-obs/'
-locations = [x[0][36:] for x in os.walk(path)]
+path = '/home/mbexkes3/DS_hub/data/uk-daily-temperature-obs/'
+
+locations = [x[0][37+15:] for x in os.walk(path)]
 city_select = Select(value=locations[1], title='City', options=sorted(locations))
 
 
@@ -148,14 +149,14 @@ city_select.on_change('value', update_plot)
 year_select.on_change('value', update_plot)
 year_select_2.on_change('value',update_plot)
 
-filename = glob.glob(path+'/'+city_select.value+'/*'+year_select.value+'*.csv')
-df = pd.read_csv(filename[0],skiprows=61)
-df['ob_date'] = pd.to_datetime(df['ob_date'][:-1], format='%Y-%m-%d %H:%M:%S')
+filename = glob.glob(path+city_select.value+'/*'+year_select.value+'*.csv')
+df = pd.read_csv(filename[0],skiprows=90)
+df['ob_date'] = pd.to_datetime(df['ob_end_time'][:-1], format='%Y-%m-%d %H:%M:%S')
 source = get_dataset(df)
 
-filename2 = glob.glob(path+'/'+city_select.value+'/*'+year_select_2.value+'*.csv')
-df2 = pd.read_csv(filename2[0],skiprows=61)
-df['ob_date'] = pd.to_datetime(df['ob_date'][:-1], format='%Y-%m-%d %H:%M:%S')
+filename2 = glob.glob(path+city_select.value+'/*'+year_select_2.value+'*.csv')
+df2 = pd.read_csv(filename2[0],skiprows=90)
+df['ob_date'] = pd.to_datetime(df['ob_end_time'][:-1], format='%Y-%m-%d %H:%M:%S')
 source2 = get_dataset(df2)
 
 title = city_select.value
@@ -166,6 +167,8 @@ year_select.on_change('value', update_plot)
 year_select_2.on_change('value',update_plot)
 
 controls = column(city_select, year_select, year_select_2)
+
+stations = stations[stations['station_file_name'].isin(locations)]
 
 map_plot = make_map(stations)
 
