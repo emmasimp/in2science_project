@@ -1,0 +1,12 @@
+name: streamlit-bokeh
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - scipy
+  - streamlit
+  - bokeh=2.4.1
+  - openpyxl
+  - spyder
+  - geopandas
+prefix: /home/mbexkes3/anaconda3/envs/streamlit-bokeh
